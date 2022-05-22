@@ -11,6 +11,7 @@ import shutil
 from statistics import mode
 import subprocess
 import sys
+from turtle import shape
 
 import onnx
 from onnx import shape_inference
@@ -21,6 +22,8 @@ from common.convert_to_str import value_infos_to_str, nodes_to_str
 from common.rename_input_output import rename_input_output
 from common.onnx2trt import covert2trt
 
+# sys.stdout = open('output.txt','wt')
+
 
 def make_parse():
     parser = argparse.ArgumentParser()
@@ -29,6 +32,7 @@ def make_parse():
     parser.add_argument("-o", "--output_plan", required=True,
                         type=str, help="output trt model")
     parser.add_argument("--fp16", action='store_true', help="whether use fp16")
+    parser.add_argument('--shapes', nargs='+', type=int)
     return parser.parse_args()
 
 
@@ -53,7 +57,8 @@ def main(model: onnx.ModelProto, profile_shapes, fp16, engine_plan_path, print_i
         print("{0}output{1}\n{2}".format(decorate, decorate,
                                          value_infos_to_str(model.graph.output)))
     model = fold_constants(model)
-    covert2trt(model=model, fp16=fp16, profile_shapes=profile_shapes,
+    onnx.save(model,"/tmp/.tmp.onnx")
+    covert2trt(model="/tmp/.tmp.onnx", fp16=fp16, profile_shapes=profile_shapes,
                engine_plan_path=engine_plan_path)
 
     # model = update_model_dims.update_inputs_outputs_dims(model,{"INPUT__0":['b',3,640,640]},{"OUTPUT__0":['b',8400,19]})
@@ -62,8 +67,13 @@ def main(model: onnx.ModelProto, profile_shapes, fp16, engine_plan_path, print_i
 if __name__ == "__main__":
     args = make_parse()
     input_model_path = args.input_onnx
-    output_model_path = args.output_onnx
+    output_model_path = args.output_plan
     fp16 = args.fp16
-    profile_shapes = {"INPUT__0":[(1,3,640,640),(1,3,640,640),(1,3,640,640)]}
+    shapes_list = args.shapes
+    size = int(len(shapes_list) / 3)
+    min_shape = tuple(shapes_list[0:size])
+    opt_shape = tuple(shapes_list[size:size*2])
+    max_shape = tuple(shapes_list[size*2:size*3])
+    profile_shapes = {"INPUT__0":[min_shape,opt_shape,max_shape]}
     model = onnx.load(input_model_path)
     main(model=model,profile_shapes=profile_shapes,fp16=fp16,engine_plan_path=output_model_path)
