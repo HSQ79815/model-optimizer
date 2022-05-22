@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import polygraph
+import polygraphy
 import polygraphy.backend.onnx
 import onnx
 

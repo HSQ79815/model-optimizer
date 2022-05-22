@@ -15,6 +15,7 @@ import onnx
 from onnx import shape_inference
 from onnx.tools import update_model_dims
 
+from common.fold_constatns import fold_constants
 from common.convert_to_str import value_infos_to_str,nodes_to_str
 from common.rename_input_output import rename_input_output
 
@@ -46,7 +47,7 @@ def main(model: onnx.ModelProto, print_info= True)-> onnx.ModelProto:
             value_infos_to_str(model.graph.input)))
         print("{0}output{1}\n{2}".format(decorate, decorate,
             value_infos_to_str(model.graph.output)))
-    return model
+    return fold_constants(model)
 
     # model = update_model_dims.update_inputs_outputs_dims(model,{"INPUT__0":['b',3,640,640]},{"OUTPUT__0":['b',8400,19]})
 
