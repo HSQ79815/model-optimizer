@@ -23,7 +23,7 @@ __global__ void custom_div(const float *src1, const float *src2, const float alp
 
 void invoke_custom_div(const float *src1, const float *src2, const float alpha, float *dest1, float *dest2, int64_t N, cudaStream_t stream)
 {
-    constexpr uint32_t SIZE = 1024;
+    constexpr uint32_t SIZE = 256;
     dim3 block{SIZE};
     dim3 grid{DivUp(static_cast<uint32_t>(N), SIZE)};
 

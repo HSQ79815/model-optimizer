@@ -9,8 +9,9 @@
 #include <vector>
 
 #include "custom_div_kernel.h"
+#include <iostream>
 
-static const char *c_OpDomain = "customop.div";
+static const char *c_OpDomain = "custom.div";
 
 struct OrtCustomOpDomainDeleter {
   explicit OrtCustomOpDomainDeleter(const OrtApi *ort_api) {
@@ -46,7 +47,9 @@ struct OrtTensorDimensions : std::vector<int64_t> {
 
 struct CustomDivKernel {
   CustomDivKernel(OrtApi api, const OrtKernelInfo *info)
-      : api_(api), ort_(api_), info_(info) {}
+      : api_(api), ort_(api_), info_(info) {
+    alpha_ = ort_.KernelInfoGetAttribute<float>(info_, "alpha");
+  }
 
   void Compute(OrtKernelContext *context) {
     // Setup inputs
@@ -55,10 +58,10 @@ struct CustomDivKernel {
     const float *X = ort_.GetTensorData<float>(input_X);
     const float *Y = ort_.GetTensorData<float>(input_Y);
 
-    float alpha = ort_.KernelInfoGetAttribute<float>(info_, "alpha");
-
     // Setup output
     OrtTensorDimensions dimensions(ort_, input_X);
+
+    OrtTensorDimensions dimensions2(ort_, input_Y);
 
     OrtValue *output1 = ort_.KernelContext_GetOutput(
         context, 0, dimensions.data(), dimensions.size());
@@ -73,16 +76,17 @@ struct CustomDivKernel {
     int64_t size = ort_.GetTensorShapeElementCount(output_info);
     ort_.ReleaseTensorTypeAndShapeInfo(output_info);
 
-    // Do computation
     cudaStream_t stream = reinterpret_cast<cudaStream_t>(
         ort_.KernelContext_GetGPUComputeStream(context));
-    invoke_custom_div(X, Y, alpha, out1, out2, size, stream);
+
+    invoke_custom_div(X, Y, alpha_, out1, out2, size, stream);
   }
 
 private:
   OrtApi api_; // keep a copy of the struct, whose ref is used in the ort_
   Ort::CustomOpApi ort_;
   const OrtKernelInfo *info_;
+  float alpha_;
 };
 
 struct CustomOpDiv : Ort::CustomOpBase<CustomOpDiv, CustomDivKernel> {
