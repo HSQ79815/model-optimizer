@@ -1,5 +1,14 @@
 #include "hardswish_plugin.h"
 
+#define CEIL_DIVIDE(X, Y) (((X) + (Y)-1) / (Y))
+#define CEIL_TO(X, Y)     (CEIL_DIVIDE(X, Y) * (Y))
+
+namespace
+{
+static const char *PLUGIN_NAME {"HardSwish"};
+static const char *PLUGIN_VERSION {"1"};
+} // namespace
+
 template <typename T>
 __global__ void HardSwishKernel(const T *input, T *output, const int nElement);
 

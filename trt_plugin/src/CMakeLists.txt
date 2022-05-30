@@ -19,3 +19,6 @@ endforeach(PLUGIN_ITER)
 list(APPEND PLUGIN_SOURCES "${PLUGIN_CU_SOURCES}")
 
 add_library(${RED_PLUGINS} SHARED ${PLUGIN_SOURCES})
+target_link_libraries(${RED_PLUGINS} 
+	PUBLIC ${EXTRALIBS}
+)

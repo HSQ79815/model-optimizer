@@ -15,6 +15,7 @@ import subprocess
 import sys
 import multiprocessing
 import time
+import ctypes
 
 def TrtType2NumpyType(a):
     if a.name == "BOOL":
@@ -28,10 +29,10 @@ def TrtType2NumpyType(a):
     else:
         return None
 
+ctypes.CDLL("trt_plugin/build/src/libred_plugins.so")
 class TrtModel:
     
     def __init__(self,engine_path):
-        
         self.engine_path = engine_path
         self.logger = trt.Logger(trt.Logger.INFO)
         self.runtime = trt.Runtime(self.logger)

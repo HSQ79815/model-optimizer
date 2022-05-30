@@ -1,13 +1,22 @@
 #include "customdiv_plugin.h"
 
+#define CEIL_DIVIDE(X, Y) (((X) + (Y)-1) / (Y))
+#define CEIL_TO(X, Y) (CEIL_DIVIDE(X, Y) * (Y))
+
+namespace
+{
+  static const char *PLUGIN_NAME{"CustomDiv"};
+  static const char *PLUGIN_VERSION{"1"};
+} // namespace
+
 template <typename T>
 __global__ void CustomDivKernel(const T *src1, const T *src2, const float alpha, T *dest1, T *dest2, const int nElement);
 
 template <>
 __global__ void CustomDivKernel<float>(const float *src1, const float *src2, const float alpha, float *dest1, float *dest2, const int nElement)
 {
-    const int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= nElement)
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    if (x >= nElement)
         return;
     float s1 = src1[x];
     float s2 = src2[x];
@@ -26,14 +35,9 @@ __global__ void CustomDivKernel<float>(const float *src1, const float *src2, con
 template <>
 __global__ void CustomDivKernel<__half>(const __half *src1, const __half *src2, const float alpha, __half *dest1, __half *dest2, const int nElement)
 {
-    const int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= nElement)
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    if (x >= nElement)
         return;
-
-    float x = __half2float(input[index]);
-    float a = fmaf(alpha, x, beta);
-    float b = fmaxf(0, fminf(1, a));
-
     float s1 = __half2float(src1[x]);
     float s2 = __half2float(src2[x]);
     if (s1 == 0.f)
@@ -58,7 +62,7 @@ namespace nvinfer1
             auto &pf = fc->fields[i];
             if (std::string(pf.name) == "alpha")
             {
-                alpha_ = *reinterpret_cast<T *>(const_cast<void *>(pf.data));
+                alpha_ = *reinterpret_cast<const float *>(const_cast<void *>(pf.data));
                 break;
             }
         }
@@ -74,10 +78,13 @@ namespace nvinfer1
 
     IPluginV2DynamicExt *CustomDivPlugin::clone() const noexcept
     {
+        size_t length = getSerializationSize();
+        uint8_t *buffer = new uint8_t[length];
+        this->serialize(static_cast<void*>(buffer));
+        CustomDivPlugin *clone_obj_ptr = new CustomDivPlugin(name_.c_str(), static_cast<void*>(buffer), length);
+        delete[] buffer;
 
-        auto p = new CustomDivPlugin(name_);
-        p->setPluginNamespace(namespace_.c_str());
-        return p;
+        return clone_obj_ptr;
     }
 
     int32_t CustomDivPlugin::getNbOutputs() const noexcept
