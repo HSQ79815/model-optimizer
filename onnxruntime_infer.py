@@ -25,7 +25,7 @@ if __name__ == "__main__":
     ortinput = ort.OrtValue.ortvalue_from_numpy(data, 'cuda', 0)
     sess_opt = ort.SessionOptions()
     sess_opt.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
-
+    sess_opt.register_custom_ops_library("ort_plugin/build/src/libort_custom_op_plugins.so")
     providers = [
         'CUDAExecutionProvider'
     ]

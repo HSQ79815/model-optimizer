@@ -4,9 +4,7 @@
 
 __global__ void custom_div(const float *src1, const float *src2, const float alpha, float *dest1, float *dest2, int64_t N)
 {
-    int x = threadIdx.x + blockIdx.x * blockDi
-
-                                           m.x;
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
     if (x >= N)
         return;
     float s1 = src1[x];
@@ -25,9 +23,9 @@ __global__ void custom_div(const float *src1, const float *src2, const float alp
 
 void invoke_custom_div(const float *src1, const float *src2, const float alpha, float *dest1, float *dest2, int64_t N, cudaStream_t stream)
 {
-    constexpr int SIZE = 1024;
+    constexpr uint32_t SIZE = 1024;
     dim3 block{SIZE};
-    dim3 grid{DivUp(N, SIZE)};
+    dim3 grid{DivUp(static_cast<uint32_t>(N), SIZE)};
 
     custom_div<<<grid, block, 0, stream>>>(src1, src2, alpha, dest1, dest2, N);
 }

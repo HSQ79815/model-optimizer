@@ -55,7 +55,7 @@ struct CustomDivKernel {
     const float *X = ort_.GetTensorData<float>(input_X);
     const float *Y = ort_.GetTensorData<float>(input_Y);
 
-    float *alpha = ort_.KernelInfoGetAttribute_float(info_, "alpha");
+    float alpha = ort_.KernelInfoGetAttribute<float>(info_, "alpha");
 
     // Setup output
     OrtTensorDimensions dimensions(ort_, input_X);
@@ -76,7 +76,7 @@ struct CustomDivKernel {
     // Do computation
     cudaStream_t stream = reinterpret_cast<cudaStream_t>(
         ort_.KernelContext_GetGPUComputeStream(context));
-    invoke_custom_div(X, Y, *alpha, out1, out2, size, stream);
+    invoke_custom_div(X, Y, alpha, out1, out2, size, stream);
   }
 
 private:
