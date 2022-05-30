@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import multiprocessing
+import time
 
 def TrtType2NumpyType(a):
     if a.name == "BOOL":
@@ -97,7 +98,7 @@ class TrtModel:
         output_nps=[]
         for i in range(len(self.output_idxs)):
             output_idx = self.output_idxs[i]
-            output_dtype=self.input_np_dtypes[i]
+            output_dtype=self.output_np_dtypes[i]
             output_shape=self.context.get_binding_shape(output_idx)
             output_np = np.ones(tuple(output_shape), dtype=output_dtype)
             output_tensor = torch.from_numpy(output_np).cuda(device_id)
@@ -130,4 +131,11 @@ if __name__ == "__main__":
     data = np.load(args.input_path)
     result = model([data],device_id,stream_ptr)
     np.save(args.output_path,result[0])
+
+    loop = 100
+    time_start = time.perf_counter()
+    for i in range(100):
+        result = model([data],device_id,stream_ptr)
+    cost_time = (time.perf_counter() - time_start)
+    print("inference cost :{0} ms".format(cost_time*1000/loop))
     
